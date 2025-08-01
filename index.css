@@ -1,0 +1,530 @@
+:root {
+  --primary-bg: #f4f7f9;
+  --secondary-bg: #ffffff;
+  --text-primary: #1d2d35;
+  --text-secondary: #5a6e78;
+  --accent-color: #007bff;
+  --accent-hover: #0056b3;
+  --danger-color: #dc3545;
+  --danger-hover: #c82333;
+  --success-color: #28a745;
+  --success-hover: #218838;
+  --border-color: #dee2e6;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+  padding: 20px;
+}
+
+#root {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.container {
+  background-color: var(--secondary-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  padding: 1.5rem 2rem;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.header-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: var(--secondary-bg);
+  color: var(--text-primary);
+  transition: background-color 0.2s, color 0.2s;
+}
+.header-btn:hover {
+    background-color: var(--primary-bg);
+}
+.header-btn.primary {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+.header-btn.primary:hover {
+    background-color: var(--accent-hover);
+}
+.header-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.game-values-container {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.spielwert-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.spielwert-container label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.spielwert-input {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    width: 80px;
+    text-align: center;
+}
+
+.player-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--primary-bg);
+  border-radius: 8px;
+}
+
+.player-form input {
+  flex-grow: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.player-form input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  background-color: var(--secondary-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.player-form button[type="submit"] {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+.player-form button[type="submit"]:hover {
+  background-color: var(--accent-hover);
+}
+
+.cancel-btn {
+  background-color: var(--text-secondary);
+  color: white;
+  border-color: var(--text-secondary);
+}
+.cancel-btn:hover {
+  background-color: #495057;
+}
+
+.scoreboard {
+  margin-top: 1rem;
+  overflow-x: auto; /* Important for responsiveness */
+}
+
+.no-players {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  padding: 2rem;
+  background-color: var(--primary-bg);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+th, td {
+  padding: 0.8rem 1rem;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.spiel-cell-clickable {
+  position: relative;
+  cursor: pointer;
+  color: var(--accent-color);
+  font-weight: 600;
+}
+.spiel-cell-clickable:hover {
+  text-decoration: underline;
+  background-color: #e9ecef;
+}
+
+.score-win {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.score-loss {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+thead th {
+  font-size: 1rem;
+  color: var(--text-primary);
+  background-color: var(--primary-bg);
+  position: relative;
+}
+
+.remove-player-btn {
+    position: absolute;
+    top: -2px;
+    right: 0px;
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0.25rem;
+    font-weight: bold;
+    opacity: 0.5;
+}
+.remove-player-btn:hover {
+    opacity: 1;
+    color: white;
+    background-color: var(--danger-color);
+    border-radius: 50%;
+}
+
+
+tbody tr:nth-child(odd) {
+    background-color: var(--secondary-bg);
+}
+tbody tr:nth-child(even) {
+    background-color: #fcfcfd;
+}
+
+tbody tr:hover .remove-runde-btn {
+  opacity: 0.6;
+}
+
+tfoot th, tfoot td {
+    font-weight: bold;
+    background-color: var(--primary-bg);
+    border-top: 2px solid var(--text-primary);
+}
+
+.fixed-col {
+    width: 100px;
+    min-width: 100px;
+    text-align: center;
+}
+
+.bock-cell {
+  font-weight: bold;
+  color: var(--accent-color);
+  font-size: 0.9em;
+  text-transform: uppercase;
+}
+
+.remove-runde-btn {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+  background: none;
+  border: none;
+  color: var(--danger-color);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.25rem;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s, color 0.2s;
+}
+.remove-runde-btn:hover {
+  opacity: 1;
+  color: white;
+  background-color: var(--danger-hover);
+  border-radius: 50%;
+}
+
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.options-column .column-header {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+/* Common styles for buttons in the options columns */
+.options-column .category-btn,
+.options-column .option-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+/* Specific style for category buttons to make them stand out */
+.options-column .category-btn {
+  font-weight: bold; /* Make it bold to act as a header */
+  margin-bottom: 1rem; /* More space after category */
+}
+
+/* Specific style for option buttons */
+.options-column .option-btn {
+  font-weight: normal;
+}
+
+/* Hover effect for non-selected buttons */
+.options-column .category-btn:not(.selected):hover,
+.options-column .option-btn:not(.selected):not(:disabled):hover {
+    background-color: var(--primary-bg);
+}
+
+.option-btn.selected,
+.category-btn.selected {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-hover);
+}
+
+.option-btn:disabled, .save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--primary-bg);
+  color: var(--text-secondary);
+}
+
+.modal-body h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.player-btn {
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+.player-btn.won {
+    background-color: var(--success-color);
+    color: white;
+    border-color: var(--success-hover);
+}
+.player-btn.lost {
+    background-color: var(--danger-color);
+    color: white;
+    border-color: var(--danger-hover);
+}
+.player-btn.neutral {
+    background-color: var(--secondary-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.validation-error {
+    color: var(--danger-color);
+    font-weight: 600;
+    text-align: center;
+    margin-top: 1rem;
+    background-color: rgba(220, 53, 69, 0.1);
+    padding: 0.5rem;
+    border-radius: 6px;
+}
+
+.spiel-summary {
+  background-color: var(--primary-bg);
+  border-radius: 6px;
+  padding: 1rem;
+  min-height: 60px;
+  border: 1px solid var(--border-color);
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+}
+
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+.modal-footer .save-btn {
+  background-color: var(--success-color);
+  color: white;
+  border-color: var(--success-color);
+}
+.modal-footer .save-btn:hover:not(:disabled) {
+  background-color: var(--success-hover);
+}
+.modal-footer .save-btn:disabled {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    opacity: 0.5;
+}
+
+.modal-footer .cancel-btn {
+    background-color: var(--text-secondary);
+    color: white;
+    border-color: var(--text-secondary);
+}
+.modal-footer .cancel-btn:hover {
+    background-color: #495057;
+}
+
+/* Details Modal Specific Styles */
+.details-view.modal-content {
+  max-width: 600px;
+}
+
+.details-view .modal-body h4 {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.options-list {
+  list-style-type: none;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.options-list li {
+  background-color: var(--primary-bg);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.bock-info {
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  color: var(--accent-color);
+}
+
+.final-score-display {
+  text-align: right;
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  border-top: 2px solid var(--text-primary);
+  padding-top: 1rem;
+  color: var(--text-primary);
+}
+
+.final-score-display.bock-info + .final-score-display {
+  border-top: none;
+  margin-top: 0.5rem;
+  padding-top: 0;
+}
