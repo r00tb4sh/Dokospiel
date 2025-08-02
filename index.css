@@ -18,7 +18,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--primary-bg);
   color: var(--text-primary);
-  padding: 20px;
+  padding: 10px;
 }
 
 #root {
@@ -31,7 +31,7 @@ body {
   background-color: var(--secondary-bg);
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--shadow-color);
-  padding: 1.5rem 2rem;
+  padding: 1rem 1.5rem;
 }
 
 .app-header {
@@ -249,10 +249,31 @@ tfoot th, tfoot td {
 }
 
 .fixed-col {
+    position: sticky;
+    left: 0;
+    z-index: 1;
     width: 100px;
     min-width: 100px;
     text-align: center;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
+
+thead .fixed-col {
+    background-color: var(--primary-bg);
+}
+
+tbody tr:nth-child(odd) .fixed-col {
+    background-color: var(--secondary-bg);
+}
+
+tbody tr:nth-child(even) .fixed-col {
+    background-color: #fcfcfd;
+}
+
+tfoot .fixed-col {
+    background-color: var(--primary-bg);
+}
+
 
 .bock-cell {
   font-weight: bold;
@@ -296,7 +317,7 @@ tfoot th, tfoot td {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 10px;
 }
 
 .modal-content {
@@ -336,15 +357,15 @@ tfoot th, tfoot td {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 1rem;
   overflow-y: auto;
 }
 
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .options-column .column-header {
@@ -527,4 +548,87 @@ tfoot th, tfoot td {
   border-top: none;
   margin-top: 0.5rem;
   padding-top: 0;
+}
+
+/* === Mobile Optimizations === */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+  
+  .container {
+    padding: 1rem;
+  }
+  
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .game-values-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .spielwert-container {
+    flex-grow: 1;
+    justify-content: center;
+  }
+
+  .spielwert-input {
+    width: 70px;
+  }
+
+  th, td {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .player-form {
+    flex-direction: column;
+  }
+  
+  .player-form button {
+    width: 100%;
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse; /* Puts primary action on bottom */
+    padding: 1rem;
+  }
+  
+  .modal-footer button {
+    width: 100%;
+  }
+
+  .modal-footer .cancel-btn {
+    margin-bottom: 0.5rem;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .options-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .options-column .option-btn,
+  .options-column .category-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
 }
