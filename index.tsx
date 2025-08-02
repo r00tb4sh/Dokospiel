@@ -365,9 +365,63 @@ const App = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewedRunde, setViewedRunde] = useState<Runde | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const BOCK_ROUND_CHARS = ['B', 'O', 'C', 'K', 'S', 'D', 'A', 'M'];
   
+  // Load state from server on initial render
+  useEffect(() => {
+    fetch('/.netlify/functions/state')
+        .then(res => {
+            if (!res.ok) {
+                console.warn('Could not load saved state. Starting fresh.');
+                return null;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data) {
+                setPlayers(data.players || []);
+                setRunden(data.runden || []);
+                setSpielwert(data.spielwert || '10/20');
+                setSoloWert(data.soloWert || '120');
+                setBockStacks(data.bockStacks || []);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching state:', error);
+        })
+        .finally(() => {
+            setIsLoaded(true);
+        });
+  }, []);
+
+  // Debounced save state to server
+  useEffect(() => {
+    if (!isLoaded) {
+        return;
+    }
+
+    const handler = setTimeout(() => {
+        const stateToSave = {
+            players,
+            runden,
+            spielwert,
+            soloWert,
+            bockStacks
+        };
+        fetch('/.netlify/functions/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(stateToSave),
+        }).catch(console.error);
+    }, 1000); // Debounce for 1 second
+
+    return () => {
+        clearTimeout(handler);
+    };
+  }, [players, runden, spielwert, soloWert, bockStacks, isLoaded]);
+
   const handleAddPlayer = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPlayerName.trim() === '') return;
@@ -615,7 +669,9 @@ const App = () => {
       )}
 
       <div className="scoreboard">
-        {players.length > 0 ? (
+        {!isLoaded ? (
+          <p className="no-players">Lade Spielstand...</p>
+        ) : players.length > 0 ? (
           <table aria-label="Spielstand">
             <thead>
               <tr>
