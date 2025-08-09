@@ -253,7 +253,7 @@ const RundeModal: React.FC<{
                 </div>
 
                 {/* Row 2: Sub-options, shown conditionally */}
-                {(modalData.options.has('Alten gewinnen') || modalData.options.has('Alten verlieren')) && (
+                {isGameTypeSelected && (
                   <div className="options-row sub-options">
                     <div className="options-column">
                       <h4 className="column-header">Gespielt</h4>
@@ -262,7 +262,6 @@ const RundeModal: React.FC<{
                           key={opt} 
                           onClick={() => handleOptionToggle(opt)}
                           className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
-                          disabled={!modalData.options.has('Alten gewinnen')}
                         >
                           {opt}
                         </button>
@@ -275,7 +274,6 @@ const RundeModal: React.FC<{
                           key={opt} 
                           onClick={() => handleOptionToggle(opt)}
                           className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
-                          disabled={!modalData.options.has('Alten gewinnen')}
                         >
                           {opt}
                         </button>
@@ -288,7 +286,6 @@ const RundeModal: React.FC<{
                           key={opt} 
                           onClick={() => handleOptionToggle(opt)}
                           className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
-                          disabled={!modalData.options.has('Alten verlieren')}
                         >
                           {opt}
                         </button>
