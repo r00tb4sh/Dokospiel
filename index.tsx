@@ -17,11 +17,21 @@ interface RundeDetails {
 
 // Definiert die Struktur einer Spielrunde
 interface Runde {
-  id: string;
+  id:string;
   scores: Record<string, string>;
   spiel: string;
   details: RundeDetails;
   bockArt: string;
+}
+
+// Definiert die Struktur eines archivierten Spiels
+interface GameArchive {
+  id: string;
+  timestamp: number;
+  players: Player[];
+  runden: Runde[];
+  spielwert: string;
+  soloWert: string;
 }
 
 type PlayerStatus = 'won' | 'lost' | 'neutral';
@@ -33,10 +43,11 @@ interface ModalData {
 
 const gameOptions = {
   'Alten gewinnen': ['Keine 90', 'Keine 60', 'Keine 30', 'schwarz'],
-  'Alten verlieren': ['Keine 90 gesagt', 'Keine 60 gesagt', 'Keine 30 gesagt', 'schwarz gesagt'],
+  'Alten verlieren': ['Keine 90 verloren', 'Keine 60 verloren', 'Keine 30 verloren', 'schwarz verloren'],
   'Ansagen': ['Re', 'Kontra'],
+  'Fehl-Ansagen': ['Keine 90 gesagt', 'Keine 60 gesagt', 'Keine 30 gesagt', 'schwarz gesagt'],
   'Solo': ['Solo verloren'],
-  'Sonderpunkte': ['Schäfchen verloren'],
+  'Sonderpunkte': ['Schäfchen verloren 1', 'Schäfchen verloren 2'],
 };
 
 
@@ -95,7 +106,8 @@ const RundeModal: React.FC<{
         } else if (option === 'Solo') {
             newOptions.delete('Alten gewinnen');
             newOptions.delete('Alten verlieren');
-            newOptions.delete('Schäfchen verloren'); // Cannot lose sheep in Solo
+            newOptions.delete('Schäfchen verloren 1'); // Cannot lose sheep in Solo
+            newOptions.delete('Schäfchen verloren 2'); // Cannot lose sheep in Solo
         }
       }
       return { ...prev, options: newOptions };
@@ -143,7 +155,7 @@ const RundeModal: React.FC<{
 
     const nonDoublingOptions = new Set([
       'Alten gewinnen', 'Alten verlieren', 'Solo',
-      'Schäfchen verloren'
+      'Schäfchen verloren 1', 'Schäfchen verloren 2'
     ]);
     
     let finalScore = baseScore;
@@ -157,10 +169,13 @@ const RundeModal: React.FC<{
         finalScore *= Math.pow(2, bockStacks.length);
     }
 
-    if (options.has('Schäfchen verloren')) {
-      const [gewinnWertStr] = spielwert.split('/');
-      const schaefchenWert = parseFloat(gewinnWertStr) || 0;
-      finalScore += schaefchenWert;
+    const [gewinnWertStr] = spielwert.split('/');
+    const schaefchenWert = parseFloat(gewinnWertStr) || 0;
+    if (options.has('Schäfchen verloren 1')) {
+        finalScore += schaefchenWert;
+    }
+    if (options.has('Schäfchen verloren 2')) {
+        finalScore += schaefchenWert;
     }
     
     return finalScore / 100;
@@ -216,48 +231,125 @@ const RundeModal: React.FC<{
           <button onClick={onClose} className="close-modal-btn" aria-label="Schließen">×</button>
         </header>
         <div className="modal-body">
-          <div className="options-grid">
-            {Object.entries(gameOptions).map(([category, opts]) => {
-               let buttonText = category;
-               if (category === 'Alten gewinnen') {
-                   buttonText = `Alten gewinnen (${gewinnWert || '?'})`;
-               } else if (category === 'Alten verlieren') {
-                   buttonText = `Alten verlieren (${verlierWert || '?'})`;
-               } else if (category === 'Solo') {
-                   buttonText = `Solo (${soloWert || '?'})`;
-               }
-              
-              const isCategoryButton = ['Alten gewinnen', 'Alten verlieren', 'Solo'].includes(category);
-              
-              return (
-              <div key={category} className="options-column">
-                {isCategoryButton ? (
-                   <button
-                    onClick={() => handleOptionToggle(category)}
-                    className={`category-btn ${modalData.options.has(category) ? 'selected' : ''}`}
-                  >
-                    {buttonText}
-                  </button>
-                ) : (
-                  <h4 className="column-header">{category}</h4>
+            <div className="options-container">
+                {/* Row 1: Main game types */}
+                <div className="options-row main-game-types">
+                    <div className="options-column">
+                        <button
+                          onClick={() => handleOptionToggle('Alten gewinnen')}
+                          className={`category-btn large ${modalData.options.has('Alten gewinnen') ? 'selected' : ''}`}
+                        >
+                          Alten gewinnen ({gewinnWert || '?'})
+                        </button>
+                    </div>
+                    <div className="options-column">
+                        <button
+                          onClick={() => handleOptionToggle('Alten verlieren')}
+                          className={`category-btn large ${modalData.options.has('Alten verlieren') ? 'selected' : ''}`}
+                        >
+                          Alten verlieren ({verlierWert || '?'})
+                        </button>
+                    </div>
+                </div>
+
+                {/* Row 2: Sub-options, shown conditionally */}
+                {(modalData.options.has('Alten gewinnen') || modalData.options.has('Alten verlieren')) && (
+                  <div className="options-row sub-options">
+                    <div className="options-column">
+                      <h4 className="column-header">Gespielt</h4>
+                      {gameOptions['Alten gewinnen'].map(opt => (
+                        <button 
+                          key={opt} 
+                          onClick={() => handleOptionToggle(opt)}
+                          className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
+                          disabled={!modalData.options.has('Alten gewinnen')}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="options-column">
+                      <h4 className="column-header">Gesagt</h4>
+                      {gameOptions['Fehl-Ansagen'].map(opt => (
+                        <button 
+                          key={opt} 
+                          onClick={() => handleOptionToggle(opt)}
+                          className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
+                          disabled={!modalData.options.has('Alten gewinnen')}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="options-column">
+                      <h4 className="column-header">Verloren</h4>
+                      {gameOptions['Alten verlieren'].map(opt => (
+                        <button 
+                          key={opt} 
+                          onClick={() => handleOptionToggle(opt)}
+                          className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
+                          disabled={!modalData.options.has('Alten verlieren')}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
-                {opts.map(opt => (
-                  <button 
-                    key={opt} 
-                    onClick={() => handleOptionToggle(opt)}
-                    className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
-                    disabled={
-                      (opt === 'Schäfchen verloren' && modalData.options.has('Solo')) ||
-                      (opt === 'Solo verloren' && !modalData.options.has('Solo'))
-                    }
-                    >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            )})}
-          </div>
+                <hr className="options-divider" />
+
+                {/* Row 3: Other options */}
+                <div className="options-row other-options">
+                    <div className="other-options-group">
+                        <div className="options-column">
+                            <button
+                              onClick={() => handleOptionToggle('Solo')}
+                              className={`category-btn ${modalData.options.has('Solo') ? 'selected' : ''}`}
+                            >
+                              Solo ({soloWert || '?'})
+                            </button>
+                            {gameOptions['Solo'].map(opt => (
+                              <button 
+                                key={opt} 
+                                onClick={() => handleOptionToggle(opt)}
+                                className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
+                                disabled={!modalData.options.has('Solo')}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                        </div>
+                        <div className="options-column">
+                            <h4 className="column-header">Sonderpunkte</h4>
+                            {gameOptions['Sonderpunkte'].map(opt => (
+                              <button 
+                                key={opt} 
+                                onClick={() => handleOptionToggle(opt)}
+                                className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
+                                disabled={modalData.options.has('Solo')}
+                              >
+                                Schäfchen verloren
+                              </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="other-options-group">
+                        <div className="options-column">
+                            <h4 className="column-header">Ansagen</h4>
+                            {gameOptions['Ansagen'].map(opt => (
+                              <button 
+                                key={opt} 
+                                onClick={() => handleOptionToggle(opt)}
+                                className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
           
           <h4>Spieler</h4>
           <div className="players-grid">
@@ -271,9 +363,9 @@ const RundeModal: React.FC<{
                 </button>
             ))}
           </div>
-          {activePlayersCount > 4 && (
+          {(activePlayersCount > 0 && activePlayersCount !== 4) && (
             <p className="validation-error">
-                Es können maximal 4 Spieler an einer Runde teilnehmen.
+                Es müssen genau 4 Spieler an einer Runde teilnehmen.
             </p>
           )}
           
@@ -288,7 +380,7 @@ const RundeModal: React.FC<{
           <button 
             onClick={() => onSave(modalData)} 
             className="save-btn"
-            disabled={!isGameTypeSelected || activePlayersCount > 4}
+            disabled={!isGameTypeSelected || activePlayersCount !== 4}
           >
             Speichern
           </button>
@@ -317,7 +409,7 @@ const DetailsModal: React.FC<{
         <div className="modal-body">
           <h4>Gespielte Optionen</h4>
           <ul className="options-list">
-            {options.map(opt => <li key={opt}>{opt}</li>)}
+            {options.map((opt, index) => <li key={`${opt}-${index}`}>{opt}</li>)}
           </ul>
           {winners.length > 0 && (
             <>
@@ -353,11 +445,66 @@ const DetailsModal: React.FC<{
 };
 
 
+const HistoryModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  history: GameArchive[];
+  onView: (gameId: string) => void;
+  onDelete: (gameId: string) => void;
+}> = ({ isOpen, onClose, history, onView, onDelete }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
+      <div className="modal-content history-view">
+        <header className="modal-header">
+          <h2 id="history-modal-title">Spielverlauf</h2>
+          <button onClick={onClose} className="close-modal-btn" aria-label="Schließen">×</button>
+        </header>
+        <div className="modal-body">
+          {history.length === 0 ? (
+            <p className="no-history">Keine gespeicherten Spiele vorhanden.</p>
+          ) : (
+            <ul className="history-list">
+              {history.map(game => (
+                <li key={game.id} className="history-item">
+                  <div className="history-item-info">
+                    <span className="history-item-date">
+                      {new Date(game.timestamp).toLocaleString('de-DE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <span className="history-item-players">
+                      {game.players.map(p => p.name).join(', ')}
+                    </span>
+                  </div>
+                  <div className="history-item-actions">
+                    <button onClick={() => onView(game.id)} className="action-btn view-btn">Ansehen</button>
+                    <button onClick={() => onDelete(game.id)} className="action-btn delete-btn">Löschen</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <footer className="modal-footer">
+          <button onClick={onClose} className="cancel-btn">Schließen</button>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
+
 const App = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [runden, setRunden] = useState<Runde[]>([]);
   const [spielwert, setSpielwert] = useState('10/20');
-  const [soloWert, setSoloWert] = useState('120');
+  const [soloWert, setSoloWert] = useState('50');
   const [bockStacks, setBockStacks] = useState<string[][]>([]);
   
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -365,66 +512,71 @@ const App = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewedRunde, setViewedRunde] = useState<Runde | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  const BOCK_ROUND_CHARS = ['B', 'O', 'C', 'K', 'S', 'D', 'A', 'M'];
+  const [history, setHistory] = useState<GameArchive[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [viewedGameId, setViewedGameId] = useState<string | null>(null);
   
-  // Load state from server on initial render
+  const isReadOnly = viewedGameId !== null;
+
+  // Load history from localStorage on initial render
   useEffect(() => {
-    fetch('/.netlify/functions/state')
-        .then(res => {
-            if (!res.ok) {
-                console.warn('Could not load saved state. Starting fresh.');
-                return null;
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (data) {
-                setPlayers(data.players || []);
-                setRunden(data.runden || []);
-                setSpielwert(data.spielwert || '10/20');
-                setSoloWert(data.soloWert || '120');
-                setBockStacks(data.bockStacks || []);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching state:', error);
-        })
-        .finally(() => {
-            setIsLoaded(true);
-        });
+    try {
+      const savedHistory = localStorage.getItem('dokoHistory');
+      if (savedHistory) {
+        setHistory(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error("Could not load game history:", error);
+    }
   }, []);
 
-  // Debounced save state to server
+  // Save history to localStorage whenever it changes
   useEffect(() => {
-    if (!isLoaded) {
-        return;
+    try {
+      localStorage.setItem('dokoHistory', JSON.stringify(history));
+    } catch (error) {
+      console.error("Could not save game history:", error);
+    }
+  }, [history]);
+
+  const BOCK_ROUND_CHARS = ['B', 'O', 'C', 'K', 'S', 'D', 'A'];
+
+  const recalculateBockStacks = useCallback((allRunden: Runde[], currentPlayers: Player[]): string[][] => {
+    let bockStateForNextRound: string[][] = [];
+    
+    // Runden are stored newest first, so we reverse to process chronologically.
+    const chronologicalRunden = [...allRunden].reverse();
+
+    for (const runde of chronologicalRunden) {
+        const bockStacksForThisRunde = bockStateForNextRound;
+
+        // Calculate the state AFTER this round was played (logic from handleSaveRunde)
+        // 1. Consume a level from the stacks that were active for this round.
+        let updatedStacks = bockStacksForThisRunde.map(stack => stack.slice(1)).filter(stack => stack.length > 0);
+
+        // 2. Add new stacks if this round triggered them.
+        const options = new Set(runde.details.options);
+        const isReKontra = options.has('Re') && options.has('Kontra');
+        const isSoloGame = options.has('Solo');
+        let newBockSetsCount = (isSoloGame ? 1 : 0) + (isReKontra ? 1 : 0);
+        
+        if (currentPlayers.length > 0 && newBockSetsCount > 0) {
+          const newStackChars = BOCK_ROUND_CHARS.slice(0, currentPlayers.length);
+          if (newStackChars.length > 0) {
+            for (let i = 0; i < newBockSetsCount; i++) updatedStacks.push(newStackChars);
+          }
+        }
+        
+        bockStateForNextRound = updatedStacks;
     }
 
-    const handler = setTimeout(() => {
-        const stateToSave = {
-            players,
-            runden,
-            spielwert,
-            soloWert,
-            bockStacks
-        };
-        fetch('/.netlify/functions/state', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(stateToSave),
-        }).catch(console.error);
-    }, 1000); // Debounce for 1 second
-
-    return () => {
-        clearTimeout(handler);
-    };
-  }, [players, runden, spielwert, soloWert, bockStacks, isLoaded]);
+    return bockStateForNextRound;
+  }, [BOCK_ROUND_CHARS]);
 
   const handleAddPlayer = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPlayerName.trim() === '') return;
+    if (newPlayerName.trim() === '' || isReadOnly) return;
 
     const newPlayer: Player = {
       id: `player_${Date.now()}`,
@@ -437,6 +589,7 @@ const App = () => {
   };
 
   const handleRemovePlayer = (idToRemove: string) => {
+    if (isReadOnly) return;
     setPlayers(players.filter(p => p.id !== idToRemove));
     setRunden(prevRunden => prevRunden.map(runde => {
       const newScores = { ...runde.scores };
@@ -446,7 +599,12 @@ const App = () => {
   };
 
   const handleRemoveRunde = (idToRemove: string) => {
-    setRunden(runden.filter(r => r.id !== idToRemove));
+    if (isReadOnly) return;
+    const updatedRunden = runden.filter(r => r.id !== idToRemove);
+    setRunden(updatedRunden);
+    
+    const newBockStacks = recalculateBockStacks(updatedRunden, players);
+    setBockStacks(newBockStacks);
   };
   
   const handleSaveRunde = useCallback((data: ModalData) => {
@@ -454,7 +612,6 @@ const App = () => {
     
     const isBockRound = bockStacks.length > 0;
     
-    // 1. Calculate bock multiplier & art for the CURRENT round
     const bockMultiplier = isBockRound ? Math.pow(2, bockStacks.length) : 1;
     const bockArtForDisplay = isBockRound 
       ? bockStacks
@@ -465,44 +622,34 @@ const App = () => {
 
     const [gewinnWertStr, verlierWertStr] = spielwert.split('/');
 
-    // 2. Calculate base score
     let baseScore = 0;
     if (options.has('Solo')) {
         baseScore = parseFloat(soloWert) || 0;
     } else {
         const gewinnWert = parseFloat(gewinnWertStr) || 0;
         const verlierWert = parseFloat(verlierWertStr) || 0;
-
-        if (options.has('Alten gewinnen')) {
-            baseScore = gewinnWert;
-        } else if (options.has('Alten verlieren')) {
-            baseScore = verlierWert;
-        }
+        if (options.has('Alten gewinnen')) baseScore = gewinnWert;
+        else if (options.has('Alten verlieren')) baseScore = verlierWert;
     }
 
-    const nonDoublingOptions = new Set([
-      'Alten gewinnen', 'Alten verlieren', 'Solo', 
-      'Schäfchen verloren'
-    ]);
-    
+    const nonDoublingOptions = new Set(['Alten gewinnen', 'Alten verlieren', 'Solo', 'Schäfchen verloren 1', 'Schäfchen verloren 2']);
     let finalScoreRaw = baseScore;
     options.forEach(option => {
-        if (!nonDoublingOptions.has(option)) {
-            finalScoreRaw *= 2;
-        }
+        if (!nonDoublingOptions.has(option)) finalScoreRaw *= 2;
     });
     
-    // 3. Apply bock multiplier
     finalScoreRaw *= bockMultiplier;
 
-    if (options.has('Schäfchen verloren')) {
-      const schaefchenWert = parseFloat(gewinnWertStr) || 0;
+    const schaefchenWert = parseFloat(gewinnWertStr) || 0;
+    if (options.has('Schäfchen verloren 1')) {
+      finalScoreRaw += schaefchenWert;
+    }
+    if (options.has('Schäfchen verloren 2')) {
       finalScoreRaw += schaefchenWert;
     }
 
     const finalScore = finalScoreRaw / 100;
 
-    // 4. Determine winners and losers and distribute points
     const newScores: Record<string, string> = {};
     players.forEach(p => (newScores[p.id] = '0,0'));
 
@@ -514,37 +661,24 @@ const App = () => {
     const isSoloLost = isSoloGame && losers.length === 1 && winners.length > 0;
 
     if (isSoloWon) {
-        const winnerScore = finalScore * 3;
-        winners.forEach(w => {
-            newScores[w.id] = winnerScore.toFixed(1).replace('.', ',');
-        });
-        losers.forEach(l => {
-            newScores[l.id] = (-finalScore).toFixed(1).replace('.', ',');
-        });
+        winners.forEach(w => newScores[w.id] = (finalScore * 3).toFixed(1).replace('.', ','));
+        losers.forEach(l => newScores[l.id] = (-finalScore).toFixed(1).replace('.', ','));
     } else if (isSoloLost) {
-        const loserScore = -finalScore * 3;
-        losers.forEach(l => {
-            newScores[l.id] = loserScore.toFixed(1).replace('.', ',');
-        });
-        winners.forEach(w => {
-            newScores[w.id] = finalScore.toFixed(1).replace('.', ',');
-        });
+        losers.forEach(l => newScores[l.id] = (-finalScore * 3).toFixed(1).replace('.', ','));
+        winners.forEach(w => newScores[w.id] = finalScore.toFixed(1).replace('.', ','));
     } else {
-        winners.forEach(w => {
-            newScores[w.id] = finalScore.toFixed(1).replace('.', ',');
-        });
-        losers.forEach(l => {
-            newScores[l.id] = (-finalScore).toFixed(1).replace('.', ',');
-        });
+        winners.forEach(w => newScores[w.id] = finalScore.toFixed(1).replace('.', ','));
+        losers.forEach(l => newScores[l.id] = (-finalScore).toFixed(1).replace('.', ','));
     }
+    
+    const displayOptions = Array.from(options).map(opt => opt.startsWith('Schäfchen verloren') ? 'Schäfchen verloren' : opt);
 
-    // 5. Create the round object
     const rundeToAdd: Runde = {
         id: `runde_${Date.now()}`,
         spiel: finalScore.toFixed(1).replace('.', ','),
         scores: newScores,
         details: {
-          options: Array.from(options),
+          options: displayOptions,
           winners: winners.map(p => p.name),
           losers: losers.map(p => p.name),
           finalScore: finalScore
@@ -552,32 +686,68 @@ const App = () => {
         bockArt: bockArtForDisplay,
     };
 
-    // 6. Update bock state for NEXT rounds
-    // a. Consume one round from each active stack
-    let updatedStacks = bockStacks
-      .map(stack => stack.slice(1))
-      .filter(stack => stack.length > 0);
-      
-    // b. Check for new bock round triggers
+    let updatedStacks = bockStacks.map(stack => stack.slice(1)).filter(stack => stack.length > 0);
     const isReKontra = options.has('Re') && options.has('Kontra');
-    let newBockSetsCount = 0;
-    if (isSoloGame) newBockSetsCount++;
-    if (isReKontra) newBockSetsCount++;
+    let newBockSetsCount = (isSoloGame ? 1 : 0) + (isReKontra ? 1 : 0);
     
-    // c. Add new stacks if triggered
     if (players.length > 0) {
       const newStackChars = BOCK_ROUND_CHARS.slice(0, players.length);
       if (newStackChars.length > 0) {
-        for (let i = 0; i < newBockSetsCount; i++) {
-          updatedStacks.push(newStackChars);
-        }
+        for (let i = 0; i < newBockSetsCount; i++) updatedStacks.push(newStackChars);
       }
     }
     setBockStacks(updatedStacks);
 
     setRunden(prevRunden => [rundeToAdd, ...prevRunden]);
     setIsModalOpen(false);
-  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS]);
+  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS, recalculateBockStacks]);
+
+  const resetGame = () => {
+    setPlayers([]);
+    setRunden([]);
+    setBockStacks([]);
+    setIsAddingPlayer(false);
+    setNewPlayerName('');
+    setViewedGameId(null);
+  };
+
+  const handleSaveAndEndGame = () => {
+    if (players.length === 0 || runden.length === 0) {
+      alert("Es muss mindestens ein Spieler und eine Runde vorhanden sein, um das Spiel zu speichern.");
+      return;
+    }
+
+    const newArchive: GameArchive = {
+      id: `game_${Date.now()}`,
+      timestamp: Date.now(),
+      players,
+      runden,
+      spielwert,
+      soloWert,
+    };
+
+    setHistory(prev => [newArchive, ...prev]);
+    resetGame();
+  };
+
+  const handleViewGame = (gameId: string) => {
+    const gameToView = history.find(g => g.id === gameId);
+    if (gameToView) {
+      setPlayers(gameToView.players);
+      setRunden(gameToView.runden);
+      setSpielwert(gameToView.spielwert);
+      setSoloWert(gameToView.soloWert);
+      setBockStacks([]); // Bocks are not part of history view
+      setViewedGameId(gameId);
+      setIsHistoryOpen(false);
+    }
+  };
+
+  const handleDeleteGame = (gameId: string) => {
+    if (window.confirm("Möchten Sie dieses Spiel wirklich endgültig löschen?")) {
+      setHistory(prev => prev.filter(g => g.id !== gameId));
+    }
+  };
   
   const totalScores = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -608,19 +778,41 @@ const App = () => {
         bockStacks={bockStacks}
       />
       <DetailsModal runde={viewedRunde} onClose={() => setViewedRunde(null)} />
+      <HistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        history={history}
+        onView={handleViewGame}
+        onDelete={handleDeleteGame}
+      />
       <header className="app-header">
         <div className="header-actions">
-            <button 
-              onClick={() => setIsAddingPlayer(true)} 
-              className="header-btn"
-              aria-label="Spieler hinzufügen"
-            >
-             Spieler hinzufügen
-            </button>
-            <button onClick={() => setIsModalOpen(true)} className="header-btn primary" disabled={players.length < 1}>
-                Neue Runde
-            </button>
+           {isReadOnly ? (
+               <button onClick={resetGame} className="header-btn primary">Neues Spiel</button>
+           ) : (
+             <>
+                <button 
+                  onClick={() => setIsAddingPlayer(true)} 
+                  className="header-btn"
+                  disabled={isReadOnly}
+                  aria-label="Spieler hinzufügen"
+                >
+                 Spieler hinzufügen
+                </button>
+                <button onClick={() => setIsModalOpen(true)} className="header-btn primary" disabled={players.length < 4 || isReadOnly}>
+                    Neue Runde
+                </button>
+             </>
+           )}
+           <button onClick={() => setIsHistoryOpen(true)} className="header-btn">Verlauf</button>
         </div>
+        { !isReadOnly && (
+            <div className="game-actions">
+                <button onClick={handleSaveAndEndGame} className="header-btn save-game-btn" disabled={players.length === 0 || runden.length === 0}>
+                    Spiel speichern & beenden
+                </button>
+            </div>
+        )}
         <div className="game-values-container">
             <div className="spielwert-container">
                 <label htmlFor="spielwert">Spielwert:</label>
@@ -632,6 +824,7 @@ const App = () => {
                     className="spielwert-input"
                     pattern="\d+(\.\d+)?\/\d+(\.\d+)?"
                     title="Bitte im Format 'gewinn/verlust' eingeben, z.B. 10/20"
+                    disabled={isReadOnly}
                 />
             </div>
             <div className="spielwert-container">
@@ -645,12 +838,13 @@ const App = () => {
                     maxLength={4}
                     placeholder="120"
                     title="Wert für ein Solospiel (max. 4 Ziffern)."
+                    disabled={isReadOnly}
                 />
             </div>
         </div>
       </header>
       
-      {isAddingPlayer && (
+      {isAddingPlayer && !isReadOnly && (
         <form onSubmit={handleAddPlayer} className="player-form" aria-label="Neuen Spieler hinzufügen">
             <input
             type="text"
@@ -669,9 +863,7 @@ const App = () => {
       )}
 
       <div className="scoreboard">
-        {!isLoaded ? (
-          <p className="no-players">Lade Spielstand...</p>
-        ) : players.length > 0 ? (
+        {players.length > 0 ? (
           <table aria-label="Spielstand">
             <thead>
               <tr>
@@ -679,7 +871,7 @@ const App = () => {
                 {players.map((player) => (
                   <th key={player.id}>
                     {player.name}
-                    <button onClick={() => handleRemovePlayer(player.id)} className="remove-player-btn" title={`${player.name} entfernen`}>×</button>
+                    {!isReadOnly && <button onClick={() => handleRemovePlayer(player.id)} className="remove-player-btn" title={`${player.name} entfernen`}>×</button>}
                   </th>
                 ))}
                 <th>Spiel</th>
@@ -710,14 +902,16 @@ const App = () => {
                   })}
                   <td className="spiel-cell-clickable" onClick={() => setViewedRunde(runde)}>
                     {runde.spiel}
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleRemoveRunde(runde.id); }} 
-                      className="remove-runde-btn"
-                      title="Diese Runde löschen"
-                      aria-label="Diese Runde löschen"
-                    >
-                      ×
-                    </button>
+                    {!isReadOnly && 
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleRemoveRunde(runde.id); }} 
+                        className="remove-runde-btn"
+                        title="Diese Runde löschen"
+                        aria-label="Diese Runde löschen"
+                      >
+                        ×
+                      </button>
+                    }
                   </td>
                 </tr>
               ))}
@@ -735,7 +929,9 @@ const App = () => {
             </tfoot>
           </table>
         ) : (
-          <p className="no-players">Fügen Sie Spieler hinzu, um das Spiel zu starten.</p>
+          <p className="no-players">
+            {isReadOnly ? "Altes Spiel wird angezeigt." : "Fügen Sie Spieler hinzu, um das Spiel zu starten."}
+          </p>
         )}
       </div>
     </div>

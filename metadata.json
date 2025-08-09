@@ -1,6 +1,6 @@
 {
-  "name": "DokoSpiel",
-  "description": "Eine einfache App, um den Spielstand von Spielern zu verfolgen.",
+  "name": "Dokospiel",
+  "description": "Eine App zur Erfassung und Verwaltung von Doppelkopf-Spielständen.",
   "requestFramePermissions": [],
   "prompt": ""
 }

@@ -43,9 +43,10 @@ body {
   gap: 1rem;
 }
 
-.header-actions {
+.header-actions, .game-actions {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .header-btn {
@@ -74,6 +75,15 @@ body {
     opacity: 0.5;
     cursor: not-allowed;
 }
+.header-btn.save-game-btn {
+    background-color: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+.header-btn.save-game-btn:hover:not(:disabled) {
+    background-color: var(--success-hover);
+}
+
 
 .game-values-container {
     display: flex;
@@ -97,6 +107,10 @@ body {
     font-size: 1rem;
     width: 80px;
     text-align: center;
+}
+.spielwert-input:disabled {
+    background-color: var(--primary-bg);
+    cursor: not-allowed;
 }
 
 .player-form {
@@ -357,15 +371,53 @@ tfoot .fixed-col {
 }
 
 .modal-body {
-  padding: 1rem;
+  padding: 1.5rem;
   overflow-y: auto;
 }
 
-.options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+/* New Options Layout Styles */
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.options-row {
+    display: grid;
+    gap: 1rem;
+}
+
+.main-game-types {
+    grid-template-columns: 1fr 1fr;
+}
+
+.sub-options {
+    grid-template-columns: repeat(3, 1fr);
+    background-color: var(--primary-bg);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.other-options {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.other-options-group {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.options-divider {
+    border: 0;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0;
 }
 
 .options-column .column-header {
@@ -377,8 +429,6 @@ tfoot .fixed-col {
   letter-spacing: 0.5px;
 }
 
-
-/* Common styles for buttons in the options columns */
 .options-column .category-btn,
 .options-column .option-btn {
   display: block;
@@ -387,18 +437,21 @@ tfoot .fixed-col {
   margin-bottom: 0.5rem;
 }
 
-/* Specific style for category buttons to make them stand out */
 .options-column .category-btn {
-  font-weight: bold; /* Make it bold to act as a header */
-  margin-bottom: 1rem; /* More space after category */
+  font-weight: bold;
+  margin-bottom: 1rem;
 }
 
-/* Specific style for option buttons */
+.options-column .category-btn.large {
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
 .options-column .option-btn {
   font-weight: normal;
 }
 
-/* Hover effect for non-selected buttons */
 .options-column .category-btn:not(.selected):hover,
 .options-column .option-btn:not(.selected):not(:disabled):hover {
     background-color: var(--primary-bg);
@@ -414,8 +467,9 @@ tfoot .fixed-col {
 .option-btn:disabled, .save-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background-color: var(--primary-bg);
+  background-color: #e9ecef;
   color: var(--text-secondary);
+  border-color: var(--border-color);
 }
 
 .modal-body h4 {
@@ -501,8 +555,8 @@ tfoot .fixed-col {
     background-color: #495057;
 }
 
-/* Details Modal Specific Styles */
-.details-view.modal-content {
+/* Details & History Modal Specific Styles */
+.details-view.modal-content, .history-view.modal-content {
   max-width: 600px;
 }
 
@@ -525,15 +579,6 @@ tfoot .fixed-col {
   margin-bottom: 0.5rem;
 }
 
-.bock-info {
-  text-align: right;
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  color: var(--accent-color);
-}
-
 .final-score-display {
   text-align: right;
   font-size: 1.4rem;
@@ -544,11 +589,71 @@ tfoot .fixed-col {
   color: var(--text-primary);
 }
 
-.final-score-display.bock-info + .final-score-display {
-  border-top: none;
-  margin-top: 0.5rem;
-  padding-top: 0;
+.no-history {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
 }
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.history-item:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.history-item:hover {
+  background-color: var(--primary-bg);
+}
+
+.history-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.history-item-date {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.history-item-players {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.history-item-actions .action-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.history-item-actions .view-btn {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.history-item-actions .delete-btn {
+  background-color: var(--danger-color);
+  color: white;
+}
+
 
 /* === Mobile Optimizations === */
 @media (max-width: 768px) {
@@ -566,7 +671,7 @@ tfoot .fixed-col {
     gap: 1.5rem;
   }
   
-  .header-actions {
+  .header-actions, .game-actions {
     flex-direction: column;
     width: 100%;
     gap: 0.75rem;
@@ -599,7 +704,7 @@ tfoot .fixed-col {
   }
   
   .modal-footer {
-    flex-direction: column-reverse; /* Puts primary action on bottom */
+    flex-direction: column-reverse;
     padding: 1rem;
   }
   
@@ -614,16 +719,31 @@ tfoot .fixed-col {
   .modal-content {
     max-height: 95vh;
   }
+
+  .history-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .history-item-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 480px) {
   .modal-header h2 {
     font-size: 1.2rem;
   }
-  
-  .options-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
+
+  .main-game-types, .sub-options {
+    grid-template-columns: 1fr;
+  }
+
+  .other-options {
+    flex-direction: column;
   }
 
   .options-column .option-btn,
