@@ -9,6 +9,7 @@
   --danger-hover: #c82333;
   --success-color: #28a745;
   --success-hover: #218838;
+  --warning-color: #ff9800;
   --border-color: #dee2e6;
   --shadow-color: rgba(0, 0, 0, 0.05);
 }
@@ -83,7 +84,6 @@ body {
 .header-btn.save-game-btn:hover:not(:disabled) {
     background-color: var(--success-hover);
 }
-
 
 .game-values-container {
     display: flex;
@@ -180,6 +180,19 @@ button {
   padding: 2rem;
   background-color: var(--primary-bg);
   border-radius: 8px;
+}
+
+.no-players.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+  animation: pulse-orange 2s infinite;
+}
+
+.no-players.clickable:hover,
+.no-players.clickable:focus {
+  background-color: #e9ecef;
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
 }
 
 table {
@@ -478,6 +491,29 @@ tfoot .fixed-col {
   font-size: 1.2rem;
 }
 
+.h4-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.h4-container h4 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.player-info-box {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background-color: var(--primary-bg);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    font-weight: 500;
+}
+
 .players-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -649,9 +685,53 @@ tfoot .fixed-col {
   color: white;
 }
 
+.history-item-actions .continue-btn {
+  background-color: var(--success-color);
+  color: white;
+}
+
 .history-item-actions .delete-btn {
   background-color: var(--danger-color);
   color: white;
+}
+
+/* Add Players Modal */
+.add-players-modal.modal-content {
+  max-width: 700px;
+}
+
+.player-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.player-input-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-input-item label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.player-input-item input {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box; /* Important */
+}
+
+.player-input-item input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 
@@ -731,6 +811,11 @@ tfoot .fixed-col {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
+  
+  .player-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -750,5 +835,17 @@ tfoot .fixed-col {
   .options-column .category-btn {
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
+  }
+}
+
+@keyframes pulse-orange {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
   }
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -117,9 +118,12 @@ const RundeModal: React.FC<{
   const handlePlayerClick = (playerId: string) => {
     setModalData(prev => {
       const currentStatus = prev.playerStates[playerId];
-      let nextStatus: PlayerStatus = 'lost';
-      if (currentStatus === 'lost') nextStatus = 'won';
-      if (currentStatus === 'won') nextStatus = 'neutral';
+      let nextStatus: PlayerStatus = 'won';
+      if (currentStatus === 'won') {
+        nextStatus = 'lost';
+      } else if (currentStatus === 'lost') {
+        nextStatus = 'neutral';
+      }
       
       const newPlayerStates = { ...prev.playerStates, [playerId]: nextStatus };
       return { ...prev, playerStates: newPlayerStates };
@@ -348,7 +352,10 @@ const RundeModal: React.FC<{
                 </div>
             </div>
           
-          <h4>Spieler</h4>
+          <div className="h4-container">
+            <h4>Spieler</h4>
+            <span className="player-info-box">1x klicken: gewonnen, 2x klicken: verloren, Aussetzende Spieler nicht anklicken</span>
+          </div>
           <div className="players-grid">
             {players.map(player => (
                 <button 
@@ -447,8 +454,9 @@ const HistoryModal: React.FC<{
   onClose: () => void;
   history: GameArchive[];
   onView: (gameId: string) => void;
+  onContinue: (gameId: string) => void;
   onDelete: (gameId: string) => void;
-}> = ({ isOpen, onClose, history, onView, onDelete }) => {
+}> = ({ isOpen, onClose, history, onView, onContinue, onDelete }) => {
   if (!isOpen) return null;
 
   return (
@@ -481,6 +489,7 @@ const HistoryModal: React.FC<{
                   </div>
                   <div className="history-item-actions">
                     <button onClick={() => onView(game.id)} className="action-btn view-btn">Ansehen</button>
+                    <button onClick={() => onContinue(game.id)} className="action-btn continue-btn">Fortsetzen</button>
                     <button onClick={() => onDelete(game.id)} className="action-btn delete-btn">Löschen</button>
                   </div>
                 </li>
@@ -496,6 +505,71 @@ const HistoryModal: React.FC<{
   );
 };
 
+const AddPlayersModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (names: string[]) => void;
+  initialPlayers: Player[];
+}> = ({ isOpen, onClose, onSave, initialPlayers }) => {
+  const [playerNames, setPlayerNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const initialNames = initialPlayers.map(p => p.name);
+      const emptySlots = Array(7 - initialNames.length).fill('');
+      setPlayerNames([...initialNames, ...emptySlots]);
+    }
+  }, [isOpen, initialPlayers]);
+
+  const handleNameChange = (index: number, name: string) => {
+    const newPlayerNames = [...playerNames];
+    newPlayerNames[index] = name;
+    setPlayerNames(newPlayerNames);
+  };
+
+  const handleSaveClick = () => {
+    const finalNames = playerNames.filter(name => name.trim() !== '');
+    onSave(finalNames);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="add-players-modal-title">
+      <div className="modal-content add-players-modal">
+        <header className="modal-header">
+          <h2 id="add-players-modal-title">Spieler verwalten</h2>
+          <button onClick={onClose} className="close-modal-btn" aria-label="Schließen">×</button>
+        </header>
+        <div className="modal-body">
+          <p>Gib die Namen der Mitspieler ein. Es können bis zu 7 Spieler teilnehmen. Leere Felder werden ignoriert.</p>
+          <div className="player-inputs-grid">
+            {playerNames.map((name, index) => (
+              <div key={index} className="player-input-item">
+                <label htmlFor={`player-input-${index}`}>Position {index + 1}</label>
+                <input
+                  id={`player-input-${index}`}
+                  type="text"
+                  value={name}
+                  onChange={(e) => handleNameChange(index, e.target.value)}
+                  placeholder="Spielername"
+                  autoFocus={index === initialPlayers.length}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <footer className="modal-footer">
+          <button onClick={onClose} className="cancel-btn">Abbrechen</button>
+          <button onClick={handleSaveClick} className="save-btn">
+            Speichern
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
 
 const App = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -504,15 +578,13 @@ const App = () => {
   const [soloWert, setSoloWert] = useState('50');
   const [bockStacks, setBockStacks] = useState<string[][]>([]);
   
-  const [newPlayerName, setNewPlayerName] = useState('');
-  const [isAddingPlayer, setIsAddingPlayer] = useState(false);
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewedRunde, setViewedRunde] = useState<Runde | null>(null);
 
   const [history, setHistory] = useState<GameArchive[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [viewedGameId, setViewedGameId] = useState<string | null>(null);
+  const [isAddPlayersModalOpen, setIsAddPlayersModalOpen] = useState(false);
   
   const isReadOnly = viewedGameId !== null;
 
@@ -570,19 +642,16 @@ const App = () => {
 
     return bockStateForNextRound;
   }, [BOCK_ROUND_CHARS]);
-
-  const handleAddPlayer = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPlayerName.trim() === '' || isReadOnly) return;
-
-    const newPlayer: Player = {
-      id: `player_${Date.now()}`,
-      name: newPlayerName.trim(),
-    };
-
-    setPlayers([...players, newPlayer]);
-    setNewPlayerName('');
-    setIsAddingPlayer(false);
+  
+  const handleSavePlayers = (names: string[]) => {
+    const newPlayers = names.map((name, index) => ({
+      id: `player_${index}_${Date.now()}`,
+      name: name.trim(),
+    }));
+    setPlayers(newPlayers);
+    setRunden([]);
+    setBockStacks([]);
+    setIsAddPlayersModalOpen(false);
   };
 
   const handleRemovePlayer = (idToRemove: string) => {
@@ -697,14 +766,12 @@ const App = () => {
 
     setRunden(prevRunden => [rundeToAdd, ...prevRunden]);
     setIsModalOpen(false);
-  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS, recalculateBockStacks]);
+  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS]);
 
   const resetGame = () => {
     setPlayers([]);
     setRunden([]);
     setBockStacks([]);
-    setIsAddingPlayer(false);
-    setNewPlayerName('');
     setViewedGameId(null);
   };
 
@@ -736,6 +803,30 @@ const App = () => {
       setSoloWert(gameToView.soloWert);
       setBockStacks([]); // Bocks are not part of history view
       setViewedGameId(gameId);
+      setIsHistoryOpen(false);
+    }
+  };
+  
+  const handleContinueGame = (gameId: string) => {
+    const gameToContinue = history.find(g => g.id === gameId);
+    if (gameToContinue) {
+      // Load game state
+      setPlayers(gameToContinue.players);
+      setRunden(gameToContinue.runden);
+      setSpielwert(gameToContinue.spielwert);
+      setSoloWert(gameToContinue.soloWert);
+      
+      // Recalculate bock stacks for the continued game
+      const bockStacksForContinuedGame = recalculateBockStacks(gameToContinue.runden, gameToContinue.players);
+      setBockStacks(bockStacksForContinuedGame);
+
+      // Set to active game mode
+      setViewedGameId(null); 
+      
+      // Remove the game from history as it's now active
+      setHistory(prev => prev.filter(g => g.id !== gameId));
+      
+      // Close the modal
       setIsHistoryOpen(false);
     }
   };
@@ -780,7 +871,14 @@ const App = () => {
         onClose={() => setIsHistoryOpen(false)}
         history={history}
         onView={handleViewGame}
+        onContinue={handleContinueGame}
         onDelete={handleDeleteGame}
+      />
+      <AddPlayersModal
+        isOpen={isAddPlayersModalOpen}
+        onClose={() => setIsAddPlayersModalOpen(false)}
+        onSave={handleSavePlayers}
+        initialPlayers={players}
       />
       <header className="app-header">
         <div className="header-actions">
@@ -789,12 +887,12 @@ const App = () => {
            ) : (
              <>
                 <button 
-                  onClick={() => setIsAddingPlayer(true)} 
-                  className="header-btn"
+                  onClick={() => setIsAddPlayersModalOpen(true)} 
+                  className="header-btn manage-players-btn"
                   disabled={isReadOnly}
-                  aria-label="Spieler hinzufügen"
+                  aria-label="Spieler verwalten"
                 >
-                 Spieler hinzufügen
+                 Spieler verwalten
                 </button>
                 <button onClick={() => setIsModalOpen(true)} className="header-btn primary" disabled={players.length < 4 || isReadOnly}>
                     Neue Runde
@@ -840,24 +938,6 @@ const App = () => {
             </div>
         </div>
       </header>
-      
-      {isAddingPlayer && !isReadOnly && (
-        <form onSubmit={handleAddPlayer} className="player-form" aria-label="Neuen Spieler hinzufügen">
-            <input
-            type="text"
-            value={newPlayerName}
-            onChange={(e) => setNewPlayerName(e.target.value)}
-            placeholder="Spielername eingeben"
-            aria-label="Spielername"
-            required
-            autoFocus
-            />
-            <button type="submit">Hinzufügen</button>
-            <button type="button" onClick={() => setIsAddingPlayer(false)} className="cancel-btn">
-                Abbrechen
-            </button>
-        </form>
-      )}
 
       <div className="scoreboard">
         {players.length > 0 ? (
@@ -926,7 +1006,12 @@ const App = () => {
             </tfoot>
           </table>
         ) : (
-          <p className="no-players">
+          <p 
+            className={`no-players ${!isReadOnly ? 'clickable' : ''}`}
+            onClick={() => !isReadOnly && setIsAddPlayersModalOpen(true)}
+            role={!isReadOnly ? 'button' : undefined}
+            tabIndex={!isReadOnly ? 0 : -1}
+          >
             {isReadOnly ? "Altes Spiel wird angezeigt." : "Fügen Sie Spieler hinzu, um das Spiel zu starten."}
           </p>
         )}
