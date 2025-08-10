@@ -48,7 +48,8 @@ const gameOptions = {
   'Ansagen': ['Re', 'Kontra'],
   'Fehl-Ansagen': ['Keine 90 gesagt', 'Keine 60 gesagt', 'Keine 30 gesagt', 'schwarz gesagt'],
   'Solo': ['Solo verloren'],
-  'Sonderpunkte': ['Schäfchen verloren 1', 'Schäfchen verloren 2'],
+  'Fuchs gefangen': ['Fuchs gefangen 1', 'Fuchs gefangen 2'],
+  'Fuchs verloren': ['Fuchs verloren 1', 'Fuchs verloren 2'],
 };
 
 
@@ -107,8 +108,10 @@ const RundeModal: React.FC<{
         } else if (option === 'Solo') {
             newOptions.delete('Alten gewinnen');
             newOptions.delete('Alten verlieren');
-            newOptions.delete('Schäfchen verloren 1'); // Cannot lose sheep in Solo
-            newOptions.delete('Schäfchen verloren 2'); // Cannot lose sheep in Solo
+            newOptions.delete('Fuchs gefangen 1');
+            newOptions.delete('Fuchs gefangen 2');
+            newOptions.delete('Fuchs verloren 1');
+            newOptions.delete('Fuchs verloren 2');
         }
       }
       return { ...prev, options: newOptions };
@@ -159,7 +162,8 @@ const RundeModal: React.FC<{
 
     const nonDoublingOptions = new Set([
       'Alten gewinnen', 'Alten verlieren', 'Solo',
-      'Schäfchen verloren 1', 'Schäfchen verloren 2'
+      'Fuchs gefangen 1', 'Fuchs gefangen 2',
+      'Fuchs verloren 1', 'Fuchs verloren 2'
     ]);
     
     let finalScore = baseScore;
@@ -174,12 +178,18 @@ const RundeModal: React.FC<{
     }
 
     const [gewinnWertStr] = spielwert.split('/');
-    const schaefchenWert = parseFloat(gewinnWertStr) || 0;
-    if (options.has('Schäfchen verloren 1')) {
-        finalScore += schaefchenWert;
+    const fuchsWert = parseFloat(gewinnWertStr) || 0;
+    if (options.has('Fuchs gefangen 1')) {
+        finalScore += fuchsWert;
     }
-    if (options.has('Schäfchen verloren 2')) {
-        finalScore += schaefchenWert;
+    if (options.has('Fuchs gefangen 2')) {
+        finalScore += fuchsWert;
+    }
+    if (options.has('Fuchs verloren 1')) {
+        finalScore -= fuchsWert;
+    }
+    if (options.has('Fuchs verloren 2')) {
+        finalScore -= fuchsWert;
     }
     
     return finalScore / 100;
@@ -322,15 +332,28 @@ const RundeModal: React.FC<{
                             ))}
                         </div>
                         <div className="options-column">
-                            <h4 className="column-header">Sonderpunkte</h4>
-                            {gameOptions['Sonderpunkte'].map(opt => (
+                            <h4 className="column-header">Fuchs gefangen</h4>
+                            {gameOptions['Fuchs gefangen'].map(opt => (
                               <button 
                                 key={opt} 
                                 onClick={() => handleOptionToggle(opt)}
                                 className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
                                 disabled={modalData.options.has('Solo')}
                               >
-                                Schäfchen verloren
+                                Fuchs gefangen
+                              </button>
+                            ))}
+                        </div>
+                        <div className="options-column">
+                            <h4 className="column-header">Fuchs verloren</h4>
+                            {gameOptions['Fuchs verloren'].map(opt => (
+                              <button 
+                                key={opt} 
+                                onClick={() => handleOptionToggle(opt)}
+                                className={`option-btn ${modalData.options.has(opt) ? 'selected' : ''}`}
+                                disabled={modalData.options.has('Solo')}
+                              >
+                                Fuchs verloren
                               </button>
                             ))}
                         </div>
@@ -698,7 +721,11 @@ const App = () => {
         else if (options.has('Alten verlieren')) baseScore = verlierWert;
     }
 
-    const nonDoublingOptions = new Set(['Alten gewinnen', 'Alten verlieren', 'Solo', 'Schäfchen verloren 1', 'Schäfchen verloren 2']);
+    const nonDoublingOptions = new Set([
+        'Alten gewinnen', 'Alten verlieren', 'Solo',
+        'Fuchs gefangen 1', 'Fuchs gefangen 2',
+        'Fuchs verloren 1', 'Fuchs verloren 2'
+    ]);
     let finalScoreRaw = baseScore;
     options.forEach(option => {
         if (!nonDoublingOptions.has(option)) finalScoreRaw *= 2;
@@ -706,12 +733,18 @@ const App = () => {
     
     finalScoreRaw *= bockMultiplier;
 
-    const schaefchenWert = parseFloat(gewinnWertStr) || 0;
-    if (options.has('Schäfchen verloren 1')) {
-      finalScoreRaw += schaefchenWert;
+    const fuchsWert = parseFloat(gewinnWertStr) || 0;
+    if (options.has('Fuchs gefangen 1')) {
+      finalScoreRaw += fuchsWert;
     }
-    if (options.has('Schäfchen verloren 2')) {
-      finalScoreRaw += schaefchenWert;
+    if (options.has('Fuchs gefangen 2')) {
+      finalScoreRaw += fuchsWert;
+    }
+    if (options.has('Fuchs verloren 1')) {
+      finalScoreRaw -= fuchsWert;
+    }
+    if (options.has('Fuchs verloren 2')) {
+      finalScoreRaw -= fuchsWert;
     }
 
     const finalScore = finalScoreRaw / 100;
@@ -737,7 +770,11 @@ const App = () => {
         losers.forEach(l => newScores[l.id] = (-finalScore).toFixed(1).replace('.', ','));
     }
     
-    const displayOptions = Array.from(options).map(opt => opt.startsWith('Schäfchen verloren') ? 'Schäfchen verloren' : opt);
+    const displayOptions = Array.from(options).map(opt => {
+        if (opt.startsWith('Fuchs gefangen')) return 'Fuchs gefangen';
+        if (opt.startsWith('Fuchs verloren')) return 'Fuchs verloren';
+        return opt;
+    });
 
     const rundeToAdd: Runde = {
         id: `runde_${Date.now()}`,
