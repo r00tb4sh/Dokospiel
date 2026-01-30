@@ -33,6 +33,7 @@ interface GameArchive {
   runden: Runde[];
   spielwert: string;
   soloWert: string;
+  isBockEnabled?: boolean;
 }
 
 type PlayerStatus = 'won' | 'lost' | 'neutral';
@@ -61,7 +62,8 @@ const RundeModal: React.FC<{
   spielwert: string;
   soloWert: string;
   bockStacks: string[][];
-}> = ({ isOpen, onClose, onSave, players, spielwert, soloWert, bockStacks }) => {
+  isBockEnabled: boolean;
+}> = ({ isOpen, onClose, onSave, players, spielwert, soloWert, bockStacks, isBockEnabled }) => {
   const [modalData, setModalData] = useState<ModalData>({
     options: new Set(),
     playerStates: {},
@@ -173,7 +175,7 @@ const RundeModal: React.FC<{
         }
     });
 
-    if (bockStacks.length > 0) {
+    if (isBockEnabled && bockStacks.length > 0) {
         finalScore *= Math.pow(2, bockStacks.length);
     }
 
@@ -193,7 +195,7 @@ const RundeModal: React.FC<{
     }
     
     return finalScore / 100;
-  }, [modalData.options, spielwert, soloWert, bockStacks]);
+  }, [modalData.options, spielwert, soloWert, bockStacks, isBockEnabled]);
 
   const spielZusammenfassung = useMemo(() => {
     const { options, playerStates } = modalData;
@@ -227,12 +229,12 @@ const RundeModal: React.FC<{
         }
     }
 
-    if (bockStacks.length > 0) {
+    if (isBockEnabled && bockStacks.length > 0) {
       summary += `\n(Bockrunde x${Math.pow(2, bockStacks.length)})`;
     }
     
     return summary;
-  }, [modalData, players, aktuellerSpielwert, bockStacks]);
+  }, [modalData, players, aktuellerSpielwert, bockStacks, isBockEnabled]);
 
 
   if (!isOpen) return null;
@@ -600,6 +602,7 @@ const App = () => {
   const [spielwert, setSpielwert] = useState('10/20');
   const [soloWert, setSoloWert] = useState('50');
   const [bockStacks, setBockStacks] = useState<string[][]>([]);
+  const [isBockEnabled, setIsBockEnabled] = useState(true);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewedRunde, setViewedRunde] = useState<Runde | null>(null);
@@ -699,7 +702,7 @@ const App = () => {
   const handleSaveRunde = useCallback((data: ModalData) => {
     const { options, playerStates } = data;
     
-    const isBockRound = bockStacks.length > 0;
+    const isBockRound = isBockEnabled && bockStacks.length > 0;
     
     const bockMultiplier = isBockRound ? Math.pow(2, bockStacks.length) : 1;
     const bockArtForDisplay = isBockRound 
@@ -789,21 +792,24 @@ const App = () => {
         bockArt: bockArtForDisplay,
     };
 
-    let updatedStacks = bockStacks.map(stack => stack.slice(1)).filter(stack => stack.length > 0);
-    const isReKontra = options.has('Re') && options.has('Kontra');
-    let newBockSetsCount = (isSoloGame ? 1 : 0) + (isReKontra ? 1 : 0);
-    
-    if (players.length > 0) {
-      const newStackChars = BOCK_ROUND_CHARS.slice(0, players.length);
-      if (newStackChars.length > 0) {
-        for (let i = 0; i < newBockSetsCount; i++) updatedStacks.push(newStackChars);
-      }
+    let updatedStacks = bockStacks;
+    if (isBockEnabled) {
+        updatedStacks = bockStacks.map(stack => stack.slice(1)).filter(stack => stack.length > 0);
+        const isReKontra = options.has('Re') && options.has('Kontra');
+        let newBockSetsCount = (isSoloGame ? 1 : 0) + (isReKontra ? 1 : 0);
+        
+        if (players.length > 0) {
+          const newStackChars = BOCK_ROUND_CHARS.slice(0, players.length);
+          if (newStackChars.length > 0) {
+            for (let i = 0; i < newBockSetsCount; i++) updatedStacks.push(newStackChars);
+          }
+        }
     }
     setBockStacks(updatedStacks);
 
     setRunden(prevRunden => [rundeToAdd, ...prevRunden]);
     setIsModalOpen(false);
-  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS]);
+  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS, isBockEnabled]);
 
   const resetGame = () => {
     setPlayers([]);
@@ -825,6 +831,7 @@ const App = () => {
       runden,
       spielwert,
       soloWert,
+      isBockEnabled
     };
 
     setHistory(prev => [newArchive, ...prev]);
@@ -838,6 +845,7 @@ const App = () => {
       setRunden(gameToView.runden);
       setSpielwert(gameToView.spielwert);
       setSoloWert(gameToView.soloWert);
+      setIsBockEnabled(gameToView.isBockEnabled !== undefined ? gameToView.isBockEnabled : true);
       setBockStacks([]); // Bocks are not part of history view
       setViewedGameId(gameId);
       setIsHistoryOpen(false);
@@ -852,6 +860,7 @@ const App = () => {
       setRunden(gameToContinue.runden);
       setSpielwert(gameToContinue.spielwert);
       setSoloWert(gameToContinue.soloWert);
+      setIsBockEnabled(gameToContinue.isBockEnabled !== undefined ? gameToContinue.isBockEnabled : true);
       
       // Recalculate bock stacks for the continued game
       const bockStacksForContinuedGame = recalculateBockStacks(gameToContinue.runden, gameToContinue.players);
@@ -901,6 +910,7 @@ const App = () => {
         spielwert={spielwert}
         soloWert={soloWert}
         bockStacks={bockStacks}
+        isBockEnabled={isBockEnabled}
       />
       <DetailsModal runde={viewedRunde} onClose={() => setViewedRunde(null)} />
       <HistoryModal
@@ -968,10 +978,26 @@ const App = () => {
                     onChange={e => /^\d{0,4}$/.test(e.target.value) && setSoloWert(e.target.value)}
                     className="spielwert-input"
                     maxLength={4}
-                    placeholder="120"
+                    placeholder="50"
                     title="Wert für ein Solospiel (max. 4 Ziffern)."
                     disabled={isReadOnly}
                 />
+            </div>
+            <div className="spielwert-container">
+              <label className="toggle-label" htmlFor="bock-toggle">Bockrunden:</label>
+              <div className="toggle-container">
+                <label className="switch">
+                  <input 
+                    id="bock-toggle"
+                    type="checkbox" 
+                    checked={isBockEnabled}
+                    onChange={(e) => setIsBockEnabled(e.target.checked)}
+                    disabled={isReadOnly}
+                  />
+                  <span className="slider"></span>
+                </label>
+                <span className="toggle-status-text">{isBockEnabled ? 'An' : 'Aus'}</span>
+              </div>
             </div>
         </div>
       </header>
