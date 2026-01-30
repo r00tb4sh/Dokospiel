@@ -635,7 +635,16 @@ const App = () => {
     }
   }, [history]);
 
-  const BOCK_ROUND_CHARS = ['B', 'O', 'C', 'K', 'S', 'D', 'A'];
+  const BOCK_ROUND_CHARS = ['B', 'O', 'C', 'K', '❤️'];
+
+  const getBockCharsForPlayers = useCallback((count: number): string[] => {
+    const base = ['B', 'O', 'C', 'K'];
+    const result = base.slice(0, Math.min(count, 4));
+    for (let i = 4; i < count; i++) {
+      result.push('❤️');
+    }
+    return result;
+  }, []);
 
   const recalculateBockStacks = useCallback((allRunden: Runde[], currentPlayers: Player[]): string[][] => {
     let bockStateForNextRound: string[][] = [];
@@ -657,7 +666,7 @@ const App = () => {
         let newBockSetsCount = (isSoloGame ? 1 : 0) + (isReKontra ? 1 : 0);
         
         if (currentPlayers.length > 0 && newBockSetsCount > 0) {
-          const newStackChars = BOCK_ROUND_CHARS.slice(0, currentPlayers.length);
+          const newStackChars = getBockCharsForPlayers(currentPlayers.length);
           if (newStackChars.length > 0) {
             for (let i = 0; i < newBockSetsCount; i++) updatedStacks.push(newStackChars);
           }
@@ -667,7 +676,7 @@ const App = () => {
     }
 
     return bockStateForNextRound;
-  }, [BOCK_ROUND_CHARS]);
+  }, [getBockCharsForPlayers]);
   
   const handleSavePlayers = (names: string[]) => {
     const newPlayers = names.map((name, index) => ({
@@ -799,7 +808,7 @@ const App = () => {
         let newBockSetsCount = (isSoloGame ? 1 : 0) + (isReKontra ? 1 : 0);
         
         if (players.length > 0) {
-          const newStackChars = BOCK_ROUND_CHARS.slice(0, players.length);
+          const newStackChars = getBockCharsForPlayers(players.length);
           if (newStackChars.length > 0) {
             for (let i = 0; i < newBockSetsCount; i++) updatedStacks.push(newStackChars);
           }
@@ -809,7 +818,7 @@ const App = () => {
 
     setRunden(prevRunden => [rundeToAdd, ...prevRunden]);
     setIsModalOpen(false);
-  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS, isBockEnabled]);
+  }, [players, spielwert, soloWert, bockStacks, BOCK_ROUND_CHARS, isBockEnabled, getBockCharsForPlayers]);
 
   const resetGame = () => {
     setPlayers([]);
