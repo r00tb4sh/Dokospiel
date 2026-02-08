@@ -1,0 +1,3 @@
+node_modules
+dist
+# android folder should be committed in Capacitor projects
