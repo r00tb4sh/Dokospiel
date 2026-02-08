@@ -3,11 +3,17 @@
   "version": "1.0.1",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && esbuild index.tsx --bundle --outfile=dist/index.js --jsx=automatic --platform=browser --minify && cp index.html index.css dist/"
+    "build": "mkdir -p dist && esbuild index.tsx --bundle --outfile=dist/index.js --jsx=automatic --platform=browser --minify && sed '/VITE_ONLY_START/,/VITE_ONLY_END/d' index.html > dist/index.html && cp index.css dist/",
+    "android:sync": "npx cap sync android",
+    "android:build": "npm run build && npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:open": "npx cap open android"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@capacitor/android": "^8.0.2",
+    "@capacitor/cli": "^8.0.2",
+    "@capacitor/core": "^8.0.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "esbuild": "^0.20.2"
