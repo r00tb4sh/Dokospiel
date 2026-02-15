@@ -3,9 +3,18 @@
   "version": "1.0.1",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && esbuild index.tsx --bundle --outfile=dist/index.js --jsx=automatic --platform=browser --minify && cp index.html index.css dist/"
+    "build": "mkdir -p dist && esbuild index.tsx --bundle --outfile=dist/index.js --jsx=automatic --platform=browser --minify && cp index.html index.css dist/ && node scripts/clean-html.js",
+    "android:sync": "cap sync android",
+    "ios:sync": "cap sync ios",
+    "android:open": "cap open android",
+    "ios:open": "cap open ios",
+    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/ios": "^6.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
